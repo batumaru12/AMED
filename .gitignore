@@ -1,0 +1,8 @@
+#データセット
+coco/
+#mae重みファイル
+mae_weights/
+#結果出力フォルダ
+output/
+#vit重みフォルダ
+vit_weights/
