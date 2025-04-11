@@ -6,3 +6,5 @@ mae_weights/
 output/
 #vit重みフォルダ
 vit_weights/
+#学習結果出力フォルダ
+train_weights/
