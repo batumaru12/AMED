@@ -140,7 +140,7 @@ def build_backbone(args):
             model_name="google/vit-base-patch16-224",
             train_backbone=train_backbone,
             num_channels=768,
-            pretrained_weights="./model_weight.pth"
+            pretrained_weights="./vit_weights/model_weight.pth"
         )
     elif args.backbone == "maevit":
         train_backbone = args.lr_backbone > 0

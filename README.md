@@ -92,7 +92,7 @@ python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --bac
 ## 評価
 評価は[eval.py](https://github.com/batumaru12/AMED/blob/main/eval.py)を使う．pycocotoolsを用いたAPとARの算出が可能．`--dataset_file`で入力されたフォルダの画像を対象に評価を行う．
 
-可視化された結果を得たい場合は[visualize_detections.py](https://github.com/batumaru12/AMED/blob/main/visualize_detections.py)を使う．`--input_folder`内すべての画像を対象に推論結果の可視化を行い，`--outout_folder`に出力．`--save_json`を設定することで検出結果をjson形式のファイルに保存できる．
+可視化された結果を得たい場合は[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)を使う．`--image_dir`内すべての画像を対象に推論結果の可視化を行い，`--outout_dir`に出力．
 
 ## 精度評価
 超音波医学会から提供されたデータセットをもとに学習を行った．データセットの詳細はオープンデータではないので触れないことにする．
