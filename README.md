@@ -16,9 +16,9 @@ MAEは画像分類の事前額手法であるため，画像特徴は得られ�
 ## 公式実装からの変更点
 このコードを書く際の目的はDETRのbackboneにMAEを適応させること．主に`./models/backbone.py`を変更．その他コードは適宜用途により調整を行った．
 
-[MAEのエンコーダ部分](https://github.com/facebookresearch/mae/blob/main/models_mae.py)をそのまま用いた手法，ViTをbackboneに適応させた手法，ViTバックボーンをもとにMAEによる事前学習結果を用いて学習する手法を実装した．
+[backborn.py](https://github.com/batumaru12/AMED/blob/main/models/backbone.py)について詳しく説明する．ViTBackbornは本来CNNベースのバックボーンを使っているDETRにViTベースのバックボーンを採用したものである．ViTMAEBackborneはViTベースのMAEから出力された事前学習モデルに適応したバックボーンである．
 
-MAEをそのまま用いた手法は膨大なメモリを必要とし，実行不可．ViTバックボーンの学習に事前学習結果を用いる手法が今回のメインとなる．
+MAEによる事前学習結果を用いて学習する場合は，ViTMAEBackborneを使用することになる．
 
 ## 使用環境
 - python 3.12.7
@@ -65,7 +65,7 @@ python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --num
 
 MAEを用いて学習する場合:
 ```
-python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --backbone maevit --num_queries 10 --mae_weights_path MAEの事前学習結果
+python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --backbone usemae --num_queries 10 --mae_weights_path MAEの事前学習結果(.pthファイル)
 ```
 
 ### コマンドライン引数の意味
@@ -95,3 +95,4 @@ python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --bac
 可視化された結果を得たい場合は[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)を使う．`--image_dir`内すべての画像を対象に推論結果の可視化を行い，`--outout_dir`に出力．
 
 ## 精度評価
+評価方法としてViTをそのまま事前学習したもの，ViTをMAEを用いて事前学習したもので比較した．
