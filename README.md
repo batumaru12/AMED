@@ -11,7 +11,7 @@
 ## 概要
 [DETR](https://github.com/facebookresearch/detr)のCNNベースのbackboneをMAEを用いたbackboneに変更することを考える．[MAE](https://github.com/facebookresearch/mae)は画像分類で高精度を記録している手法で，その特徴抽出機構が物体検出に良い影響を与えると考えた．また，他の手法に比べDETRはbackbone以降の処理にtransformerを用いており，実装の難易度が低いと考えた．
 
-MAEは画像分類の事前額手法であるため，画像特徴は得られるが位置情報が欠落する．DETRでは，backboneの処理後に位置エンコーディングを行っており，その機構を利用した．
+このコードでの精度評価に関しては[国立研究開発法人日本医療研究開発法人(AMED)](https://www.amed.go.jp)から提供されたデータセットを使用する．
 
 ## 公式実装からの変更点
 このコードを書く際の目的はDETRのbackboneにMAEを適応させること．主に`./models/backbone.py`を変更．その他コードは適宜用途により調整を行った．
@@ -19,6 +19,8 @@ MAEは画像分類の事前額手法であるため，画像特徴は得られ�
 [backborn.py](https://github.com/batumaru12/AMED/blob/main/models/backbone.py)について詳しく説明する．ViTBackbornは本来CNNベースのバックボーンを使っているDETRにViTベースのバックボーンを採用したものである．ViTMAEBackborneはViTベースのMAEから出力された事前学習モデルに適応したバックボーンである．
 
 MAEによる事前学習結果を用いて学習する場合は，ViTMAEBackborneを使用することになる．
+
+また，検出結果を確認した結果一つの物体に対する検出枠が複数得られることが多かった．よってMNSの実装を行った．MNSは[detr.py](https://github.com/batumaru12/AMED/blob/main/models/detr.py)に実装されている．285行目あたりに書かれたuse_nmsがNMSの使用フラグとなっており，TrueにすることでNMSを使用する．
 
 ## 使用環境
 - python 3.12.7
