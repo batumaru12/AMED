@@ -22,7 +22,7 @@ MAEをそのまま用いた手法は膨大なメモリを必要とし，実行�
 
 ## 使用環境
 - python 3.12.7
-- pytorch 2.5.1 [ダウンロードサイト](https://pytorch.org/get-started/previous-versions/)
+- pytorch 2.5.1 [ダウンロードコマンド](https://pytorch.org/get-started/previous-versions/)
 ```
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
