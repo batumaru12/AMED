@@ -13,8 +13,8 @@ import util.misc as utils
 
 def get_args():
     parser = argparse.ArgumentParser(description="DETR Inference and Visualization Script")
-    parser.add_argument("--input_folder", type=str, required=True, help="Path to input folder containing images")
-    parser.add_argument("--output_folder", type=str, default="image_result", help="Folder to save detection results")
+    parser.add_argument("--input_dir", type=str, required=True, help="Path to input folder containing images")
+    parser.add_argument("--output_dir", type=str, default="image_result", help="Folder to save detection results")
     parser.add_argument("--model_checkpoint", type=str, required=True, help="Path to the trained model checkpoint")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to use for inference")
     parser.add_argument("--num_classes", type=int, default=2, help="Number of classes including background")
