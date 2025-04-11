@@ -282,7 +282,7 @@ class PostProcess(nn.Module):
         scale_fct = torch.stack([img_w, img_h, img_w, img_h], dim=1)
         boxes = boxes * scale_fct[:, None, :]
 
-        use_nms = True #NMSの使用フラグ
+        use_nms = False #NMSの使用フラグ
 
         if use_nms == False:
             results = [{'scores': s, 'labels': l, 'boxes': b} for s, l, b in zip(scores, labels, boxes)]

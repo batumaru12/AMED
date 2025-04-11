@@ -95,4 +95,3 @@ python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --bac
 可視化された結果を得たい場合は[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)を使う．`--image_dir`内すべての画像を対象に推論結果の可視化を行い，`--outout_dir`に出力．
 
 ## 精度評価
-超音波医学会から提供されたデータセットをもとに学習を行った．データセットの詳細はオープンデータではないので触れないことにする．
