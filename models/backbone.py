@@ -117,11 +117,7 @@ class Joiner(nn.Sequential):
 def build_backbone(args):
     position_embedding = build_position_encoding(args)
 
-    if args.backbone == "mae":
-        from models_mae import mae_vit_base_patch16  # MAEのモデルロード
-        mae_model = mae_vit_base_patch16()
-        backbone = MAEBackbone(mae_model, position_embedding)
-    elif args.backbone == "vit":
+    if args.backbone == "vit":
         train_backbone = args.lr_backbone > 0
         return_interm_layers = args.masks  # 現在は中間層を返す設定はサポートしない
 
@@ -142,12 +138,6 @@ def build_backbone(args):
             num_channels=768,
             pretrained_weights="./vit_weights/model_weight.pth"
         )
-    elif args.backbone == "maevit":
-        train_backbone = args.lr_backbone > 0
-
-        # MAEバックボーンを初期化
-        checkpoint_path = args.mae_weights_path
-        backbone = ViTMAEBackbone(checkpoint_path=checkpoint_path, train_backbone=train_backbone)
     elif args.backbone == "usemae":
         train_backbone = args.lr_backbone > 0
 
@@ -162,43 +152,6 @@ def build_backbone(args):
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
-
-class MAEBackbone(nn.Module):
-    """Backbone using MAE encoder with CNN-like output."""
-    def __init__(self, mae_model: nn.Module, position_encoding: nn.Module, input_size=224):
-        super().__init__()
-        self.mae_model = mae_model
-        self.position_encoding = position_encoding
-        self.input_size = input_size  # MAE expects 224x224
-        self.num_channels = self.mae_model.embed_dim
-
-    def forward(self, tensor_list: NestedTensor):
-        # テンソルとマスクを取得
-        x, mask = tensor_list.tensors, tensor_list.mask
-
-        # リサイズ前の元の画像サイズを保存
-        original_height, original_width = x.shape[2], x.shape[3]
-
-        # 画像を224x224にリサイズ（MAEが要求するサイズ）
-        resize_transform = Resize((self.input_size, self.input_size))
-        x_resized = resize_transform(x)
-
-        # MAEエンコーダを通す（mask_ratio=0でマスキングなし）
-        features, _, _ = self.mae_model.forward_encoder(x_resized, mask_ratio=0.0)
-
-        # CLSトークンを除去し、[B, C, H, W] にリシェイプ
-        B, L, C = features.shape
-        patch_size = self.mae_model.patch_embed.patch_size[0]
-        H = W = int(L**0.5)  # パッチが正方形のグリッドであることを仮定
-        features = features[:, 1:, :].reshape(B, H, W, C).permute(0, 3, 1, 2)
-
-        # リサイズ後の特徴量を元のサイズに戻す
-        features = F.interpolate(features, size=(original_height, original_width), mode='bilinear', align_corners=False)
-
-        # 出力を辞書形式に変換
-        out = {"0": NestedTensor(features, mask)}
-
-        return out
 
 class ViTBackbone(nn.Module):
     """ViTをバックボーンとして使用するためのカスタムクラス"""
