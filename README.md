@@ -22,7 +22,7 @@ MAEをそのまま用いた手法は膨大なメモリを必要とし，実行�
 
 ## 使用環境
 - python 3.12.7
-- pytorch 2.5.1
+- pytorch 2.5.1 [ダウンロードサイト](https://pytorch.org/get-started/previous-versions/)
 ```
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
@@ -31,7 +31,7 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvi
 ```
 conda install cython scipy
 ```
-pycocotools 2.0..8
+pycocotools 2.0.8
 ```
 conda install conda-forge::pycocotools
 ```
@@ -51,6 +51,8 @@ conda install matplotlib
 ```
 conda install transformers
 ```
+
+Anacondaではない場合はpipなどでインストールしてください．
 
 ## トレーニング
 学習を行うには[train.py](https://github.com/batumaru12/AMED/blob/main/train.py)を使用する．大本は[DETRの公式実装](https://github.com/facebookresearch/detr)の[main.py](https://github.com/facebookresearch/detr/blob/main/main.py)を参考に作成した．変更点はそれぞれのエポックごとに学習結果を出力するように変更した．モデルをエポックごとに保存する分，PCの容量を多く消費するので注意すること．また，提案手法を実現するために必要なコマンドライン引数の追加を行った．
