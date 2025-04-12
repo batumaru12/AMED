@@ -210,7 +210,7 @@ class ViTBackbone(nn.Module):
 
 class ViTMAEBackbone(nn.Module):
     """MAEのエンコーダをバックボーンとして使用"""
-    def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 256):
+    def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 768):
         super().__init__()
         # MAEモデルのエンコーダを初期化
         self.mae_model = mae_vit_base_patch16()
@@ -268,7 +268,7 @@ class NewViTMAEBackbone(nn.Module):
     - 位置埋め込み(pos_embed)を補間して使用
     - 出力特徴をConv1x1でnum_channels(例: 256)に変換
     """
-    def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 256):
+    def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 768):
         super().__init__()
         self.mae_model = mae_vit_base_patch16()  # MAEモデルの事前定義が必要
         self.num_channels = num_channels
