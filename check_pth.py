@@ -3,7 +3,7 @@ import argparse
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set file path', add_help=False)
-    parser.add_argument('--file_path', default="./model_weight.pth", type=str)
+    parser.add_argument('--file_path', default="./amed/mae_weights/checkpoint-799.pth", type=str)
     return parser
 
 

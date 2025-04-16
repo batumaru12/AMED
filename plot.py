@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import os
 
 # ログファイルのパス
-log_file_path = "./w_vit_result/log.txt" #結果を保存したディレクトリのlog.txtを参照
-output_dir = "./w_vit_plot/" #プロット結果を出力するフォルダ
+log_file_path = "./amed/train_weights/usemae/log.txt" #結果を保存したディレクトリのlog.txtを参照
+output_dir = "./amed/output/usemae_plot/" #プロット結果を出力するフォルダ
 
 #指定した出力フォルダがない場合作成
 if not os.path.isdir(output_dir):
