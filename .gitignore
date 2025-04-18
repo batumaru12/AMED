@@ -8,3 +8,5 @@ output/
 vit_weights/
 #学習結果出力フォルダ
 train_weights/
+#新しいアノテーションデータセット
+annotations/
