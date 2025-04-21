@@ -23,38 +23,37 @@ MAEによる事前学習結果を用いて学習する場合は，ViTMAEBackborn
 また，検出結果を確認した結果一つの物体に対する検出枠が複数得られることが多かった．よってMNSの実装を行った．MNSは[detr.py](https://github.com/batumaru12/AMED/blob/main/models/detr.py)に実装されている．285行目あたりに書かれたuse_nmsがNMSの使用フラグとなっており，TrueにすることでNMSを使用する．
 
 ## 使用環境
-- python 3.12.7
+- python 3.12.10
 - pytorch 2.5.1 [ダウンロードコマンド](https://pytorch.org/get-started/previous-versions/)
 ```
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118
 ```
 - cython 3.0.11
+```
+pip install cython==3.0.11
+```
 - scipy 1.13.1
 ```
-conda install cython scipy
+pip install scipy==1.13.1
 ```
 pycocotools 2.0.8
 ```
-conda install conda-forge::pycocotools
-```
-- tqdm 4.66.5
-```
-conda install tqdm
+pip install pycocotools==2.0.8
 ```
 - timm 1.0.11
 ```
-conda install conda-forge::timm
+pip install timm==1.0.11
 ```
 - matplotlib 3.9.2
 ```
-conda install matplotlib
+pip install matplotlib
 ```
 - transformers 4.45.2
 ```
-conda install transformers
+pip install transformers==4.45.2
 ```
 
-Anacondaではない場合はpipなどでインストールしてください．
+venvにて仮想環境を構築．
 
 ## トレーニング
 学習を行うには[train.py](https://github.com/batumaru12/AMED/blob/main/train.py)を使用する．大本は[DETRの公式実装](https://github.com/facebookresearch/detr)の[main.py](https://github.com/facebookresearch/detr/blob/main/main.py)を参考に作成した．変更点はそれぞれのエポックごとに学習結果を出力するように変更した．モデルをエポックごとに保存する分，PCの容量を多く消費するので注意すること．また，提案手法を実現するために必要なコマンドライン引数の追加を行った．
