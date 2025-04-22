@@ -10,3 +10,5 @@ vit_weights/
 train_weights/
 #新しいアノテーションデータセット
 annotations/
+#アノテーションを確認するGUIアプリ
+gui.py
