@@ -12,3 +12,5 @@ train_weights/
 annotations/
 #アノテーションを確認するGUIアプリ
 gui.py
+#動画
+video/
