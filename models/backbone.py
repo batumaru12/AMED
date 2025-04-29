@@ -136,7 +136,7 @@ def build_backbone(args):
             model_name="google/vit-base-patch16-224",
             train_backbone=train_backbone,
             num_channels=768,
-            pretrained_weights="./vit_weights/model_weight.pth"
+            pretrained_weights="./vit_weights/model_weight.pth" #事前学習結果
         )
     elif args.backbone == "usemae":
         train_backbone = args.lr_backbone > 0
@@ -144,12 +144,6 @@ def build_backbone(args):
         # MAEバックボーンを初期化
         checkpoint_path = args.mae_weights_path
         backbone = ViTMAEBackbone(checkpoint_path=checkpoint_path, train_backbone=train_backbone)
-    elif args.backbone == "newmae":
-        train_backbone = args.lr_backbone > 0
-
-        # MAEバックボーンを初期化
-        checkpoint_path = args.mae_weights_path
-        backbone = NewViTMAEBackbone(checkpoint_path=checkpoint_path, train_backbone=train_backbone)
     else:
         train_backbone = args.lr_backbone > 0
         return_interm_layers = args.masks
@@ -260,72 +254,3 @@ class ViTMAEBackbone(nn.Module):
         mask = F.interpolate(mask[None].float(), size=(h_patches, w_patches)).to(torch.bool)[0]
 
         return {"0": NestedTensor(features, mask)}
-    
-class NewViTMAEBackbone(nn.Module):
-    """
-    改良版 MAE バックボーン:
-    - 入力画像のアスペクト比を保持しながら224x224へパディング
-    - 位置埋め込み(pos_embed)を補間して使用
-    - 出力特徴をConv1x1でnum_channels(例: 256)に変換
-    """
-    def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 768):
-        super().__init__()
-        self.mae_model = mae_vit_base_patch16()  # MAEモデルの事前定義が必要
-        self.num_channels = num_channels
-
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        self.mae_model.load_state_dict(checkpoint["model"], strict=False)
-
-        if not train_backbone:
-            for param in self.mae_model.parameters():
-                param.requires_grad_(False)
-
-        # 出力チャネル変換
-        self.channel_proj = nn.Conv2d(self.mae_model.embed_dim, num_channels, kernel_size=1)
-
-    def interpolate_pos_embed(self, pos_embed, target_hw):
-        cls_token = pos_embed[:, :1, :]  # [1, 1, C]
-        patch_tokens = pos_embed[:, 1:, :]  # [1, N, C]
-        orig_size = int(patch_tokens.shape[1] ** 0.5)
-        patch_tokens = patch_tokens.reshape(1, orig_size, orig_size, -1).permute(0, 3, 1, 2)
-
-        # 補間
-        patch_tokens = F.interpolate(patch_tokens, size=target_hw, mode="bicubic", align_corners=False)
-        patch_tokens = patch_tokens.permute(0, 2, 3, 1).reshape(1, target_hw[0] * target_hw[1], -1)
-        return torch.cat((cls_token, patch_tokens), dim=1)
-
-    def pad_to_224(self, x):
-        _, _, h, w = x.shape
-        scale = min(224 / h, 224 / w)
-        nh, nw = int(h * scale), int(w * scale)
-        resized = F.interpolate(x, size=(nh, nw), mode="bilinear", align_corners=False)
-        pad_h, pad_w = 224 - nh, 224 - nw
-        padded = F.pad(resized, (0, pad_w, 0, pad_h))  # (left, right, top, bottom)
-        return padded, (nh // 16, nw // 16)  # パッチ解像度返す
-
-    def forward(self, tensor_list: NestedTensor):
-        x = tensor_list.tensors
-        mask = tensor_list.mask
-
-        padded_x, patch_hw = self.pad_to_224(x)
-        patches = self.mae_model.patch_embed(padded_x)
-
-        cls_token = self.mae_model.cls_token.expand(patches.size(0), -1, -1)
-        patches = torch.cat((cls_token, patches), dim=1)
-
-        pos_embed = self.interpolate_pos_embed(self.mae_model.pos_embed, patch_hw)
-        patches = patches + pos_embed
-
-        for blk in self.mae_model.blocks:
-            patches = blk(patches)
-
-        patches = patches[:, 1:, :]
-        B, N, C = patches.shape
-        h_patches, w_patches = patch_hw
-        features = patches.permute(0, 2, 1).reshape(B, C, h_patches, w_patches)
-        features = self.channel_proj(features)
-
-        # マスクを再スケール
-        resized_mask = F.interpolate(mask[None].float(), size=(h_patches, w_patches)).to(torch.bool)[0]
-
-        return {"0": NestedTensor(features, resized_mask)}
