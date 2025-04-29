@@ -14,3 +14,5 @@ annotations/
 gui.py
 #動画
 video/
+#動画推論結果
+video_output/
