@@ -5,6 +5,7 @@ import torch
 from torchvision import transforms as T
 from PIL import Image, ImageDraw
 from tqdm import tqdm
+import cv2
 
 # DETR関連のコードをインポート
 from models.detr import build  # これはDETRの公式実装に依存
@@ -30,7 +31,7 @@ def get_transform():
                     std=[0.229, 0.224, 0.225])
     ])
 
-def detect_and_visualize(model, postprocessors, image_folder, output_folder, device, threshold=0.5):
+def detect_and_visualize(model, postprocessors, image_folder, output_folder, device, threshold):
     """
     DETRを用いて画像フォルダ内の物体検出と可視化。
     """
@@ -63,6 +64,61 @@ def detect_and_visualize(model, postprocessors, image_folder, output_folder, dev
         output_path = Path(output_folder) / image_path.name
         image.save(output_path)
 
+def detect_and_visualize_video(model, postprocessors, video_dir, output_folder, device, threshold):
+    os.makedirs(output_folder, exist_ok=True)
+    transform = get_transform()
+
+    video_paths = list(Path(video_dir).glob('*.avi'))
+
+    for video_path in tqdm(video_paths, desc="Processing videos"):
+        cap = cv2.VideoCapture(str(video_path))
+        if not cap.isOpened():
+            print(f"Warning: Cannot open video {video_path}")
+            continue
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
+        output_video_name = video_path.stem + '.avi'
+        output_path = Path(output_folder) / output_video_name
+        out = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
+
+        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        for _ in range(frame_count):
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            img_tensor = transform(image).unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                outputs = model(img_tensor)
+                target_sizes = torch.tensor([[image.height, image.width]], device=device)
+                results = postprocessors['bbox'](outputs, target_sizes)
+
+            boxes = results[0]['boxes'].cpu().numpy()
+            scores = results[0]['scores'].cpu().numpy()
+            labels = results[0]['labels'].cpu().numpy()
+
+            keep = scores > threshold
+            boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
+
+            for box, label, score in zip(boxes, labels, scores):
+                x_min, y_min, x_max, y_max = box
+                cv2.rectangle(frame, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 0, 255), 2)
+                text = f"Class {label}: {score:.2f}"
+                cv2.putText(frame, text, (int(x_min), int(y_min) - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
+            out.write(frame)
+
+        cap.release()
+        out.release()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DETRによる物体検出結果の可視化")
     parser.add_argument("--image_dir", type=str, required=True, help="Path to input folder containing images")
@@ -70,12 +126,13 @@ if __name__ == "__main__":
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model checkpoint")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to use for inference")
     parser.add_argument("--num_classes", type=int, default=2, help="Number of object classes (excluding background)")
+    parser.add_argument("--threshold", type=float, default=0.5)
 
     # build() に必要なオプション
     parser.add_argument("--dataset_file", type=str, default="coco")
     parser.add_argument("--masks", action="store_true")
     parser.add_argument("--aux_loss", action="store_true")
-    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--lr_backbone", type=float, default=1e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--backbone", type=str, default="resnet50")
@@ -98,12 +155,18 @@ if __name__ == "__main__":
     parser.add_argument('--mae_weights_path', default=None, type=str)
     parser.add_argument("--mae_mask_ratio", default=0.75, type=float)
 
+    parser.add_argument("--video", action="store_true")
+
     args = parser.parse_args()
 
     print("Loading model and postprocessors...")
     model, postprocessors = load_model_and_postprocessors(args)
 
-    print("Running detection and visualization...")
-    detect_and_visualize(model, postprocessors, args.image_dir, args.output_dir, args.device)
+    if args.video:
+        print("Running detection and visualization...")
+        detect_and_visualize_video(model, postprocessors, args.image_dir, args.output_dir, args.device, args.threshold)
+    else:
+        print("Running detection and visualization...")
+        detect_and_visualize(model, postprocessors, args.image_dir, args.output_dir, args.device, args.threshold)
 
     print("Processing completed!")
