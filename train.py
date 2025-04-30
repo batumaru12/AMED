@@ -103,6 +103,8 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     parser.add_argument('--mae_weights_path', default=None, type=str)
     parser.add_argument("--mae_mask_ratio", default=0.75, type=float)
+
+    parser.add_argument("--find_unused_parameters", action='store_true',help='Set find_unused_parameters=True in DistributedDataParallel')
     return parser
 
 
@@ -127,7 +129,7 @@ def main(args):
 
     model_without_ddp = model
     if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=args.find_unused_parameters)
         model_without_ddp = model.module
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
