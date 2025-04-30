@@ -69,6 +69,12 @@ MAEを用いて学習する場合:
 python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --backbone usemae --num_queries 10 --mae_weights_path MAEの事前学習結果(.pthファイル)
 ```
 
+複数GPUを使って学習を行う場合:
+```
+CUDA_VISIBLE_DEVICES=0,1,2 python -m torch.distributed.launch --nproc_per_node=3 --use_env
+```
+これを`train.py`の前につける．また，エラーが出るため`--find_unused_parameters`をつけること．
+
 ### コマンドライン引数の意味
 - `--lr` 学習率の設定(デフォルト: 1e-4)
 - `--batch_size` バッチサイズの設定　使用環境に合わせて変更(デフォルト: 2)
