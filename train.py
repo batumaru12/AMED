@@ -231,7 +231,7 @@ def main(args):
             accuracy = 0.0
 
         # 最良モデルの更新
-        if accuracy > best_accuracy:
+        if accuracy >= best_accuracy:
             best_accuracy = accuracy
             best_model_path = output_dir / 'best_model.pth'
             utils.save_on_master({
