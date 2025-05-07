@@ -70,53 +70,52 @@ def detect_and_visualize(model, postprocessors, image_folder, output_folder, dev
             x_min, y_min, x_max, y_max = box
             draw.rectangle([x_min, y_min, x_max, y_max], outline="red", width=3)
             draw.text((x_min, y_min), f"Class {label}, Score: {score:.2f}", fill="red")
+            if save_json:
+                if image_path not in image_id_map:
+                    width_img, height_img = get_image_size(image_path)
+                    image_id = image_id_counter
+                    image_id_map[image_path] = image_id
+                    image_id_counter += 1
+                    images.append({
+                        "id": image_id,
+                        "file_name": os.path.basename(image_path),
+                        "width": width_img,
+                        "height": height_img
+                    })
+                    used_image_path.add(image_path)
+                else:
+                    image_id = image_id_map[image_path]
+
+                w_box = float(x_max) - float(x_min)
+                h_box = float(y_max) - float(y_min)
+
+                annotations.append({
+                    "id": annotation_id,
+                    "image_id": image_id,
+                    "category_id": int(label),
+                    "bbox": [float(x_min), float(y_min), float(w_box), float(h_box)],
+                    "area": (w_box * h_box),
+                    "iscrowd": 0
+                })
+                annotation_id += 1
+
+                coco_format = {
+                    "images": images,
+                    "annotations": annotations,
+                    "categories": categories
+                }
+
+                json_path_obj = Path(json_path)
+                if not json_path_obj.parent.exists():
+                    json_path_obj.parent.mkdir()
+                if not json_path_obj.exists():
+                    json_path_obj.touch()
+            
+                with open(json_path, "w") as f:
+                    json.dump(coco_format, f, indent=2)
 
         output_path = Path(output_folder) / image_path.name
         image.save(output_path)
-
-        if save_json:
-            if image_path not in image_id_map:
-                width_img, height_img = get_image_size(image_path)
-                image_id = image_id_counter
-                image_id_map[image_path] = image_id
-                image_id_counter += 1
-                images.append({
-                    "id": image_id,
-                    "file_name": os.path.basename(image_path),
-                    "width": width_img,
-                    "height": height_img
-                })
-                used_image_path.add(image_path)
-            else:
-                image_id = image_id_map[image_path]
-            
-            w_box = float(x_max) - float(x_min)
-            h_box = float(y_max) - float(y_min)
-            
-            annotations.append({
-                "id": annotation_id,
-                "image_id": image_id,
-                "category_id": int(label),
-                "bbox": [float(x_min), float(y_min), float(w_box), float(h_box)],
-                "area": (w_box * h_box),
-                "iscrowd": 0
-            })
-            annotation_id += 1
-            
-    coco_format = {
-        "images": images,
-        "annotations": annotations,
-        "categories": categories
-    }
-
-    json_path_obj = Path(json_path)
-    if not json_path_obj.parent.exists():
-        json_path_obj.parent.mkdir()
-    if not json_path_obj.exists():
-        json_path_obj.touch()
-
-    with open(json_path, "w") as f:
-        json.dump(coco_format, f, indent=2)
 
 def detect_and_visualize_video(model, postprocessors, video_dir, output_folder, device, threshold):
     os.makedirs(output_folder, exist_ok=True)
