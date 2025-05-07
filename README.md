@@ -81,7 +81,7 @@ python train.py --batch_size 16 --epochs 500 --lr_drop 350 --num_classes 2 --bac
 ```
 CUDA_VISIBLE_DEVICES=0,1,2 python -m torch.distributed.launch --nproc_per_node=3 --use_env
 ```
-これを`train.py`の前につける．また，エラーが出るため`--find_unused_parameters`をつけること．
+これを`train.py`の前につける．また，エラーが出るため`--find_unused_parameters`をつけること．GPU間で対応をとるときにパラメータに不足がないか確認がある．その時に，セグメンテーションタスクなどで用いるパラメータが物体検出の場合ないため，パラメータ不足のエラーを吐く．`--find_unused_parameters`を使うことでパラメータ不足の確認をスキップ．
 
 ### コマンドライン引数の意味
 - `--lr` 学習率の設定(デフォルト: 1e-4)
@@ -91,13 +91,16 @@ CUDA_VISIBLE_DEVICES=0,1,2 python -m torch.distributed.launch --nproc_per_node=3
 - `--num_classes` 部隊検出のクラス数　データセットのクラス数+1(背景クラス)に設定(デフォルト: None)
 - `--backbone` バックボーンの種類を設定　vitでViTバックボーン，maevitでMAEバックボーン(デフォルト: resnet50)
 - `--num_queries` クエリ数を設定　最大検出枠+10ぐらいに設定(デフォルト: 100)
+- `--eos_coef` 背景クラスの損失重み(デフォルト: 0.1)
 - `--coco_path` cocoデータセットが入ったフォルダを指定(デフォルト: ./coco)
 - `--output_dir` 結果とログの出力フォルダを設定
 - `--device` CPUを使うかGPUを使うか(デフォルト: cuda)
 - `--resume` DETRの事前学習済みモデルを設定
 - `--start_epoch` 途中から学習を再開する場合，そのエポックを設定(デフォルト: 0)
+- `--eval` これを使うと推論モードになり精度を出力する
 - `--mae_weights_path` MAEの事前学習済み重みを設定
 - `--mae_mask_ratio` MAEのマスク率を設定(デフォルト: 0.75)
+- `--find_unused_parameters` 複数のGPUを使う際に指定
 
 学習の進行状況を`--output_dir`に設定したパスに`log.txt`として保存される．[plot.py](https://github.com/batumaru12/AMED/blob/main/plot.py)を使用することで，グラフにすることが可能．学習状況の確認に適宜利用すること．
 
