@@ -2,8 +2,8 @@
 coco/
 #mae重みファイル
 mae_weights/
-#結果出力フォルダ
-output/
+#推論画像出力フォルダ
+image_output/
 #vit重みフォルダ
 vit_weights/
 #学習結果出力フォルダ
@@ -16,3 +16,5 @@ gui.py
 video/
 #動画推論結果
 video_output/
+#学習グラフ
+plot_result/
