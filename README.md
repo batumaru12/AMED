@@ -105,12 +105,15 @@ CUDA_VISIBLE_DEVICES=0,1,2 python -m torch.distributed.launch --nproc_per_node=3
 可視化された結果を得たい場合は[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)を使う．`--image_dir`内すべての画像を対象に推論結果の可視化を行い，`--outout_dir`に出力．
 
 ## 精度評価
-評価方法としてViTをそのまま事前学習したもの，ViTをMAEを用いて事前学習したもので比較した．
+評価方法として先行研究(YOLOv3)と，ViTをそのまま事前学習したもの，ViTをMAEを用いて事前学習したもので比較した．評価する際のIoU閾値は0.1とする(先行研究のYOLOv3の評価に合わせた)．
 
 |model|AP|AR|F1 score|dataset|
-|:----|----|----|----|----|
+|----|:----:|:----:|:----:|:----:|
+|YOLOv3|0.873|0.885|0.879|[AMED](https://www.amed.go.jp)|
 |DETR(ViT)|0.919|0.977|0.944|[AMED](https://www.amed.go.jp)|
 |DETR(MAE)|0.919|0.980|0.949|[AMED](https://www.amed.go.jp)|
+
+先行研究のYOLOv3に比べ，いずれの手法でも高い結果が得られた．今後は，閾値を高くした場合に精度が落ちにくいモデルの実装が必要となる．
 
 ## 自己教師あり学習
 本研究では，与えられたデータセットではアノテーションされていない腫瘍があることを前提に，一度目の検出で過剰に腫瘍を検出し，その結果から疑似ラベルを得て再び学習を行う．検出結果から疑似ラベルを得るために，[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)で`--save_json`を指定する．`--save_json`を設定することで検出結果を画像で出力するのと同時に，coco形式のjsonファイルで検出結果を保存する．
