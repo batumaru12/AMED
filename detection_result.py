@@ -115,7 +115,7 @@ def detect_and_visualize(model, postprocessors, image_folder, output_folder, dev
     if not json_path_obj.exists():
         json_path_obj.touch()
 
-    with open(json_path, "a") as f:
+    with open(json_path, "w") as f:
         json.dump(coco_format, f, indent=2)
 
 def detect_and_visualize_video(model, postprocessors, video_dir, output_folder, device, threshold):
