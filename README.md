@@ -7,6 +7,7 @@
 - [コマンドライン引数](#コマンドライン引数の意味)
 - [MAE](#mae)
 - [評価](#評価)
+- [自己教師あり学習](#自己教師あり学習)
 
 ## 概要
 [DETR](https://github.com/facebookresearch/detr)のCNNベースのbackboneをMAEを用いたbackboneに変更することを考える．[MAE](https://github.com/facebookresearch/mae)は画像分類で高精度を記録している手法で，その特徴抽出機構が物体検出に良い影響を与えると考えた．また，他の手法に比べDETRはbackbone以降の処理にtransformerを用いており，実装の難易度が低いと考えた．
@@ -21,6 +22,8 @@
 MAEによる事前学習結果を用いて学習する場合は，ViTMAEBackborneを使用することになる．
 
 また，検出結果を確認した結果一つの物体に対する検出枠が複数得られることが多かった．よってMNSの実装を行った．MNSは[detr.py](https://github.com/batumaru12/AMED/blob/main/models/detr.py)に実装されている．285行目あたりに書かれたuse_nmsがNMSの使用フラグとなっており，TrueにすることでNMSを使用する．
+
+![フローチャート](./fig/proposed_method.jpeg)
 
 ## 使用環境
 - python 3.12.10
@@ -103,3 +106,11 @@ CUDA_VISIBLE_DEVICES=0,1,2 python -m torch.distributed.launch --nproc_per_node=3
 
 ## 精度評価
 評価方法としてViTをそのまま事前学習したもの，ViTをMAEを用いて事前学習したもので比較した．
+
+|model|AP|AR|F1 score|dataset|
+|:----|----|----|----|----|
+|DETR(ViT)|0.919|0.977|0.944|[AMED](https://www.amed.go.jp)|
+|DETR(MAE)|0.919|0.980|0.949|[AMED](https://www.amed.go.jp)|
+
+## 自己教師あり学習
+本研究では，与えられたデータセットではアノテーションされていない腫瘍があることを前提に，一度目の検出で過剰に腫瘍を検出し，その結果から疑似ラベルを得て再び学習を行う．検出結果から疑似ラベルを得るために，[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)で`--save_json`を指定する．`--save_json`を設定することで検出結果を画像で出力するのと同時に，coco形式のjsonファイルで検出結果を保存する．
