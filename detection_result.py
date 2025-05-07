@@ -38,6 +38,17 @@ def detect_and_visualize(model, postprocessors, image_folder, output_folder, dev
     os.makedirs(output_folder, exist_ok=True)
     transform = get_transform()
 
+    categories = [
+    {"id": 0, "name": "tumor"}
+    ]
+
+    images = []
+    annotations = []
+    image_id_map = {}
+    image_id_counter = 0
+    annotation_id = 0
+    used_image_path = set()
+
     for image_path in tqdm(image_paths, desc="Processing images"):
         image = Image.open(image_path).convert('RGB')
         img_tensor = transform(image).unsqueeze(0).to(device)
@@ -64,17 +75,6 @@ def detect_and_visualize(model, postprocessors, image_folder, output_folder, dev
         image.save(output_path)
 
         if save_json:
-            categories = [
-                {"id": 0, "name": "tumor"}
-            ]
-
-            images = []
-            annotations = []
-            image_id_map = {}
-            image_id_counter = 0
-            annotation_id = 0
-            used_image_path = set()
-
             if image_path not in image_id_map:
                 width_img, height_img = get_image_size(image_path)
                 image_id = image_id_counter
