@@ -192,7 +192,6 @@ class ViTBackbone(nn.Module):
         return {"0": NestedTensor(features, mask)}
 
 class ViTMAEBackbone(nn.Module):
-    """MAEのエンコーダをバックボーンとして使用"""
     def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 768):
         super().__init__()
         self.mae_model = mae_vit_base_patch16()
