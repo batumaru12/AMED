@@ -118,7 +118,6 @@ def main(args):
 
     device = torch.device(args.device)
 
-    # fix the seed for reproducibility
     seed = args.seed + utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -196,13 +195,12 @@ def main(args):
     print("Start training")
     start_time = time.time()
 
-    best_accuracy = 0.0  # 最良モデルの精度を記録する変数
+    best_accuracy = 0.0
 
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             sampler_train.set_epoch(epoch)
 
-        # 1エポックの訓練
         train_stats = train_one_epoch(
             model, criterion, data_loader_train, optimizer, device, epoch,
             args.clip_max_norm
@@ -210,7 +208,6 @@ def main(args):
 
         lr_scheduler.step()
 
-        # モデルの保存（エポック番号付き）
         if args.output_dir:
             checkpoint_path = output_dir / f'checkpoint_epoch_{epoch + 1:03}.pth'
             utils.save_on_master({
@@ -221,18 +218,15 @@ def main(args):
                 'args': args,
             }, checkpoint_path)
 
-        # 検証と精度の算出
         test_stats, coco_evaluator = evaluate(
             model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
         )
 
-        # COCOのbbox評価から精度を取得
         if coco_evaluator is not None and "bbox" in coco_evaluator.coco_eval:
             accuracy = coco_evaluator.coco_eval["bbox"].stats[0]  # bbox mAP
         else:
             accuracy = 0.0
 
-        # 最良モデルの更新
         if accuracy >= best_accuracy:
             best_accuracy = accuracy
             best_model_path = output_dir / 'best_model.pth'
@@ -245,7 +239,6 @@ def main(args):
                 'args': args,
             }, best_model_path)
 
-        # ログの記録
         log_stats = {
             **{f'train_{k}': v for k, v in train_stats.items()},
             **{f'test_{k}': v for k, v in test_stats.items()},
