@@ -18,3 +18,5 @@ video/
 video_output/
 #学習グラフ
 plot_result/
+#自己教師あり学習用のjosn保存フォルダ
+save_json_folder/
