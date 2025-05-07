@@ -10,24 +10,27 @@
 - [自己教師あり学習](#自己教師あり学習)
 
 ## 概要
-[DETR](https://github.com/facebookresearch/detr)のCNNベースのbackboneをMAEを用いたbackboneに変更することを考える．[MAE](https://github.com/facebookresearch/mae)は画像分類で高精度を記録している手法で，その特徴抽出機構が物体検出に良い影響を与えると考えた．また，他の手法に比べDETRはbackbone以降の処理にtransformerを用いており，実装の難易度が低いと考えた．
+[MAE](https://github.com/facebookresearch/mae)を使って物体検出精度の向上を図る．[MAE](https://github.com/facebookresearch/mae)は画像分類において高精度を記録しており，この特徴抽出手法は物体検出にも応用できる．物体検出は[DETR](https://github.com/facebookresearch/detr)を使用する．[DETR](https://github.com/facebookresearch/detr)はbackbone以降の処理にtransformerベースの処理を採用しており，ViTベースの[MAE](https://github.com/facebookresearch/mae)と相性が良いのではないかと考えた．
 
 本研究の詳細は省略するので，関係者以外には不可解な点あり．
 
 このコードでの精度評価に関しては[国立研究開発法人日本医療研究開発法人(AMED)](https://www.amed.go.jp)から提供されたデータセットを使用する．
 
 ## 公式実装からの変更点
-このコードを書く際の目的はDETRのbackboneにMAEを適応させること．主に`./models/backbone.py`を変更．その他コードは適宜用途により調整を行った．
+[DETR](https://github.com/facebookresearch/detr)のbackboneはCNNベースで実装されているが，[MAE](https://github.com/facebookresearch/mae)はViTベースで作られている．よって[DETR](https://github.com/facebookresearch/detr)のbackboneをViTベースに変更した．[DETR](https://github.com/facebookresearch/detr)のコードをほぼ引用しているが，[backbone.py](https://github.com/batumaru12/AMED/blob/main/models/backbone.py)にViTベースのbackbone，MAEによる事前楽手に適応させたbackboneを実装した．
 
-[backborn.py](https://github.com/batumaru12/AMED/blob/main/models/backbone.py)について詳しく説明する．ViTBackbornは本来CNNベースのバックボーンを使っているDETRにViTベースのバックボーンを採用したものである．ViTMAEBackborneはViTベースのMAEから出力された事前学習モデルに適応したバックボーンである．
-
-MAEによる事前学習結果を用いて学習する場合は，ViTMAEBackborneを使用することになる．
-
-また，検出結果を確認した結果一つの物体に対する検出枠が複数得られることが多かった．よってMNSの実装を行った．MNSは[detr.py](https://github.com/batumaru12/AMED/blob/main/models/detr.py)に実装されている．285行目あたりに書かれたuse_nmsがNMSの使用フラグとなっており，TrueにすることでNMSを使用する．
+また，検出結果を確認した結果一つの物体に対する検出枠が複数得られることが多かった．よってMNSの実装を行った．MNSは[detr.py](https://github.com/batumaru12/AMED/blob/main/models/detr.py)に実装されている．285行目あたりに書かれた`use_nms`がNMSの使用フラグとなっており，TrueにすることでNMSを使用する．
 
 ![フローチャート](./fig/proposed_method.jpeg)
 
 ## 使用環境
+基本的には[requirements.txt](https://github.com/batumaru12/AMED/blob/main/requirements.txt)でどうにかなるはず．
+```
+pip install -r requirements.txt
+```
+
+ならなかったら下のコマンドを参照しながら入れて．詳しくは知らないが[requirements.txt](https://github.com/batumaru12/AMED/blob/main/requirements.txt)で入れるとpytorch系でエラーが出るとか出ないとか…
+
 - python 3.12.10
 - pytorch 2.5.1 [ダウンロードコマンド](https://pytorch.org/get-started/previous-versions/)
 ```
@@ -61,7 +64,7 @@ pip install transformers==4.45.2
 venvにて仮想環境を構築．
 
 ## トレーニング
-学習を行うには[train.py](https://github.com/batumaru12/AMED/blob/main/train.py)を使用する．大本は[DETRの公式実装](https://github.com/facebookresearch/detr)の[main.py](https://github.com/facebookresearch/detr/blob/main/main.py)を参考に作成した．変更点はそれぞれのエポックごとに学習結果を出力するように変更した．モデルをエポックごとに保存する分，PCの容量を多く消費するので注意すること．また，提案手法を実現するために必要なコマンドライン引数の追加を行った．
+学習を行うには[train.py](https://github.com/batumaru12/AMED/blob/main/train.py)を使用する．大本は[DETRの公式実装](https://github.com/facebookresearch/detr)の[main.py](https://github.com/facebookresearch/detr/blob/main/main.py)を参考に作成した．変更点はそれぞれのエポックごとに学習結果を出力するように変更した．モデルをエポックごとに保存する分，PCの容量を多く消費するので注意すること(PC容量が少ない場合[main.py](https://github.com/facebookresearch/detr/blob/main/main.py)の実行を推奨)．また，提案手法を実現するために必要なコマンドライン引数の追加を行った．
 
 エポック 500 バッチサイズ 16 でトレーニング:
 ```
@@ -99,12 +102,16 @@ CUDA_VISIBLE_DEVICES=0,1,2 python -m torch.distributed.launch --nproc_per_node=3
 学習の進行状況を`--output_dir`に設定したパスに`log.txt`として保存される．[plot.py](https://github.com/batumaru12/AMED/blob/main/plot.py)を使用することで，グラフにすることが可能．学習状況の確認に適宜利用すること．
 
 ## MAE
-バックボーンにMAEを用いる場合，[Masked Autoencoderの公式実装](https://github.com/facebookresearch/detr/blob/main/main.py)による事前学習が必要．DETRはcoco形式のデータセットを使うが，MAEはcoco形式のデータセットに対応していない．coco形式のデータセットに対応させたMAEを[]()に置く．これを使て学習してできた.pthファイルを`--mae_weights_path`に指定すること．
+バックボーンにMAEを用いる場合，[Masked Autoencoderの公式実装](https://github.com/facebookresearch/detr/blob/main/main.py)による事前学習が必要．DETRはcoco形式のデータセットを使うが，MAEはcoco形式のデータセットに対応していない．coco形式のデータセットに対応させたMAEは[main_pretrain.py](https://github.com/batumaru12/AMED/blob/main/main_pretrain.py)．このリポジトリにあるファイルだけでは多分MAEの学習はできないので，[Masked Autoencoderの公式実装](https://github.com/facebookresearch/detr/blob/main/main.py)をcloneして事前に学習を済ませすこと．これを使て学習してできた.pthファイルを`--mae_weights_path`に指定すること．
+
+```
+git clone https://github.com/facebookresearch/mae
+```
 
 ## 評価
-評価は[eval.py](https://github.com/batumaru12/AMED/blob/main/eval.py)を使う．pycocotoolsを用いたAPとARの算出が可能．`--dataset_file`で入力されたフォルダの画像を対象に評価を行う．
+評価は[train.py](https://github.com/batumaru12/AMED/blob/main/train.py)で`--eval`を指定することで推論モードにできる．pycocotoolsを用いたAPとARの算出が可能．`--dataset_file`で入力されたフォルダの画像を対象に評価を行う．
 
-可視化された結果を得たい場合は[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)を使う．`--image_dir`内すべての画像を対象に推論結果の可視化を行い，`--outout_dir`に出力．
+可視化された結果を得たい場合は[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)を使う．`--image_dir`内すべての画像を対象に推論結果の可視化を行い，`--outout_dir`に出力．`--video`を使うと動画に対し推論も可．
 
 ## 精度評価
 評価方法として先行研究(YOLOv3)と，ViTをそのまま事前学習したもの，ViTをMAEを用いて事前学習したもので比較した．評価する際のIoU閾値は0.1とする(先行研究のYOLOv3の評価に合わせた)．
