@@ -12,6 +12,8 @@
 ## 概要
 [DETR](https://github.com/facebookresearch/detr)のCNNベースのbackboneをMAEを用いたbackboneに変更することを考える．[MAE](https://github.com/facebookresearch/mae)は画像分類で高精度を記録している手法で，その特徴抽出機構が物体検出に良い影響を与えると考えた．また，他の手法に比べDETRはbackbone以降の処理にtransformerを用いており，実装の難易度が低いと考えた．
 
+本研究の詳細は省略するので，関係者以外には不可解な点あり．
+
 このコードでの精度評価に関しては[国立研究開発法人日本医療研究開発法人(AMED)](https://www.amed.go.jp)から提供されたデータセットを使用する．
 
 ## 公式実装からの変更点
