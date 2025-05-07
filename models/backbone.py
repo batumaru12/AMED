@@ -119,9 +119,8 @@ def build_backbone(args):
 
     if args.backbone == "vit":
         train_backbone = args.lr_backbone > 0
-        return_interm_layers = args.masks  # 現在は中間層を返す設定はサポートしない
+        return_interm_layers = args.masks
 
-        # ViTベースバックボーンを構築
         backbone = ViTBackbone(
             model_name="google/vit-base-patch16-224",
             train_backbone=train_backbone,
@@ -129,19 +128,17 @@ def build_backbone(args):
         )
     elif args.backbone == "wvit":
         train_backbone = args.lr_backbone > 0
-        return_interm_layers = args.masks  # 現在は中間層を返す設定はサポートしない
+        return_interm_layers = args.masks
 
-        # ViTベースバックボーンを構築
         backbone = ViTBackbone(
             model_name="google/vit-base-patch16-224",
             train_backbone=train_backbone,
             num_channels=768,
-            pretrained_weights="./vit_weights/model_weight.pth" #事前学習結果
+            pretrained_weights="./vit_weights/model_weight.pth"
         )
     elif args.backbone == "usemae":
         train_backbone = args.lr_backbone > 0
 
-        # MAEバックボーンを初期化
         checkpoint_path = args.mae_weights_path
         backbone = ViTMAEBackbone(checkpoint_path=checkpoint_path, train_backbone=train_backbone)
     else:
@@ -154,7 +151,6 @@ def build_backbone(args):
     return model
 
 class ViTBackbone(nn.Module):
-    """ViTをバックボーンとして使用するためのカスタムクラス"""
     def __init__(self, model_name: str = "google/vit-base-patch16-224", train_backbone: bool = True, num_channels: int = 768, pretrained_weights: str = None):
         super().__init__()
         self.vit = ViTModel.from_pretrained(model_name)
@@ -165,27 +161,22 @@ class ViTBackbone(nn.Module):
             for param in self.vit.parameters():
                 param.requires_grad_(False)
         self.num_channels = num_channels
-        self.input_size = (224, 224)  # ViTの期待する入力サイズ
-        self.patch_size = 16  # デフォルトのパッチサイズ (ViTベースモデルの場合)
+        self.input_size = (224, 224)
+        self.patch_size = 16
 
     def forward(self, tensor_list: NestedTensor):
-        x = tensor_list.tensors  # [batch_size, 3, H, W]
-        mask = tensor_list.mask  # [batch_size, H, W]
+        x = tensor_list.tensors
+        mask = tensor_list.mask
 
-        # 1. 入力画像をViTの期待するサイズにリサイズ
         resized_x = F.interpolate(x, size=self.input_size, mode="bilinear", align_corners=False)
 
-        # 2. マスクもリサイズ
         resized_mask = F.interpolate(mask[None].float(), size=self.input_size).to(torch.bool)[0]
 
-        # 3. ViTによる特徴抽出
         vit_output = self.vit(pixel_values=resized_x)
-        features = vit_output.last_hidden_state  # [batch_size, num_patches + 1, hidden_size]
+        features = vit_output.last_hidden_state
 
-        # 4. クラストークンを除外
-        features = features[:, 1:, :]  # クラストークンを削除
+        features = features[:, 1:, :]
 
-        # 5. パッチ数から2Dマップの形状を計算
         batch_size, num_patches, hidden_size = features.size()
         h_patches = self.input_size[0] // self.patch_size
         w_patches = self.input_size[1] // self.patch_size
@@ -194,10 +185,8 @@ class ViTBackbone(nn.Module):
             f"パッチ数 ({num_patches}) と計算された形状 ({h_patches}x{w_patches}) が一致しません。"
         )
 
-        # 特徴を2Dマップ形式に変換
         features = features.permute(0, 2, 1).view(batch_size, hidden_size, h_patches, w_patches)
 
-        # 6. マスクも同じ形状にリサイズ
         mask = F.interpolate(resized_mask[None].float(), size=(h_patches, w_patches)).to(torch.bool)[0]
 
         return {"0": NestedTensor(features, mask)}
@@ -206,11 +195,9 @@ class ViTMAEBackbone(nn.Module):
     """MAEのエンコーダをバックボーンとして使用"""
     def __init__(self, checkpoint_path: str, train_backbone: bool = True, num_channels: int = 768):
         super().__init__()
-        # MAEモデルのエンコーダを初期化
         self.mae_model = mae_vit_base_patch16()
         self.num_channels = num_channels
 
-        # 重みをロード
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
         self.mae_model.load_state_dict(checkpoint["model"], strict=False)
 
@@ -219,30 +206,23 @@ class ViTMAEBackbone(nn.Module):
                 param.requires_grad_(False)
 
     def forward(self, tensor_list: NestedTensor):
-        x = tensor_list.tensors  # [batch_size, 3, H, W]
-        mask = tensor_list.mask  # [batch_size, H, W]
+        x = tensor_list.tensors
+        mask = tensor_list.mask
 
-        # 1. 入力画像をMAEの期待するサイズにリサイズ
         resized_x = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
 
-        # 2. パッチ埋め込み
-        patches = self.mae_model.patch_embed(resized_x)  # [batch_size, num_patches, embed_dim]
+        patches = self.mae_model.patch_embed(resized_x)
 
-        # 3. クラストークンを追加
-        cls_tokens = self.mae_model.cls_token.expand(patches.size(0), -1, -1)  # [batch_size, 1, embed_dim]
-        patches = torch.cat((cls_tokens, patches), dim=1)  # [batch_size, num_patches + 1, embed_dim]
+        cls_tokens = self.mae_model.cls_token.expand(patches.size(0), -1, -1)
+        patches = torch.cat((cls_tokens, patches), dim=1)
 
-        # 4. 位置埋め込みを追加
-        patches = patches + self.mae_model.pos_embed  # [batch_size, num_patches + 1, embed_dim]
+        patches = patches + self.mae_model.pos_embed
 
-        # 5. エンコーダブロックに通す
         for blk in self.mae_model.blocks:
             patches = blk(patches)
 
-        # 6. クラストークンを除外
-        patches = patches[:, 1:, :]  # クラストークンを削除
+        patches = patches[:, 1:, :]
 
-        # 7. 特徴を2Dマップ形式に変換
         batch_size, num_patches, hidden_size = patches.size()
         h_patches = int(num_patches**0.5)
         w_patches = num_patches // h_patches
@@ -250,7 +230,6 @@ class ViTMAEBackbone(nn.Module):
 
         features = patches.permute(0, 2, 1).view(batch_size, hidden_size, h_patches, w_patches)
 
-        # 8. マスクも同じ形状にリサイズ
         mask = F.interpolate(mask[None].float(), size=(h_patches, w_patches)).to(torch.bool)[0]
 
         return {"0": NestedTensor(features, mask)}
