@@ -259,7 +259,7 @@ class SetCriterion(nn.Module):
 class PostProcess(nn.Module):
     """ This module converts the model's output into the format expected by the coco api"""
     @torch.no_grad()
-    def forward(self, outputs, target_sizes, iou_threshold=0.5):
+    def forward(self, outputs, target_sizes, iou_threshold=0.3):
         """ Perform the computation
         Parameters:
             outputs: raw outputs of the model
