@@ -1,5 +1,4 @@
 import subprocess
-import argparse
 import os
 
 num_loop = 10 #ループ回数
