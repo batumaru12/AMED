@@ -129,3 +129,5 @@ git clone https://github.com/facebookresearch/mae
 
 ## 自己教師あり学習
 本研究では，与えられたデータセットではアノテーションされていない腫瘍があることを前提に，一度目の検出で過剰に腫瘍を検出し，その結果から疑似ラベルを得て再び学習を行う．検出結果から疑似ラベルを得るために，[detection_result.py](https://github.com/batumaru12/AMED/blob/main/detection_result.py)で`--save_json`を指定する．`--save_json`を設定することで検出結果を画像で出力するのと同時に，coco形式のjsonファイルで検出結果を保存する．
+
+自己教師あり学習を何回か繰り返す場合，[self_train.py](https://github.com/batumaru12/AMED/blob/main/self_train.py)の実行がおすすめ．学習，検出，検出結果による学習を繰り返す．
