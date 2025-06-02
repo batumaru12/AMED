@@ -107,7 +107,7 @@ def detect_and_visualize(model, postprocessors, image_folder, output_folder, dev
 
                 json_path_obj = Path(json_path)
                 if not json_path_obj.parent.exists():
-                    json_path_obj.parent.mkdir()
+                    json_path_obj.parent.mkdir(parents=True, exist_ok=True)
                 if not json_path_obj.exists():
                     json_path_obj.touch()
             
