@@ -21,6 +21,4 @@ plot_result/
 #自己教師あり学習用のjosn保存フォルダ
 save_json_folder/
 
-meta_annotations.py
-
 self_train_loop.py
